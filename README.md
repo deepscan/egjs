@@ -1,5 +1,5 @@
 # egjs
-[![Build Status](https://travis-ci.org/naver/egjs.svg?branch=master)](https://travis-ci.org/naver/egjs) [![Test coverage](https://codeclimate.com/github/naver/egjs/badges/coverage.svg)](https://codeclimate.com/github/naver/egjs/coverage)
+[![Build Status](https://travis-ci.org/naver/egjs.svg?branch=master)](https://travis-ci.org/naver/egjs) [![Test coverage](https://codeclimate.com/github/naver/egjs/badges/coverage.svg)](https://codeclimate.com/github/naver/egjs/coverage) [![DeepScan Grade](https://deepscan.io/api/projects/221/branches/392/badge/grade.svg)](https://deepscan.io/dashboard/#view=project&pid=221&bid=392)
 
 egjs is a jQuery-based JavaScript library consisting of UI interactions, effects, and utilities, which brings easiest and fastest way to build a web application in your way.
 
