@@ -177,7 +177,7 @@ eg.module("infiniteGrid", ["jQuery", eg, window, document], function($, ns, glob
 		_refreshViewport: function() {
 			var el = this.$view.get(0);
 			if (el) {
-				this._clientHeight = $.isWindow(el) ? el.innerHeight : el.clientHeight;
+				this._clientHeight = $.isWindow(el) ? el.innerHeight || document.documentElement.clientHeight : el.clientHeight;
 			}
 		},
 		/**
@@ -408,7 +408,7 @@ eg.module("infiniteGrid", ["jQuery", eg, window, document], function($, ns, glob
 		_getTopItem: function() {
 			var item = null;
 			var min = Infinity;
-			$.each(this.items, function(i, v) {
+			$.each(this._getColItems(false), function(i, v) {
 				if (v && v.position.y < min) {
 					min = v.position.y;
 					item = v;
@@ -434,7 +434,7 @@ eg.module("infiniteGrid", ["jQuery", eg, window, document], function($, ns, glob
 			var item = null;
 			var max = -Infinity;
 			var pos;
-			$.each(this._getColItems(false), function(i, v) {
+			$.each(this._getColItems(true), function(i, v) {
 				pos = v ? v.position.y + v.size.height : 0;
 				if (pos >= max) {
 					max = pos;

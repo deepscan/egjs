@@ -463,19 +463,36 @@ QUnit.test("adaptiveHeight", function(assert) {
 		adaptiveHeight: true
 	});
 
-	// Then
-	for (var i = 0; i < inst._conf.panel.count-1; i++) {
-		var panelHeight = inst.getElement().outerHeight(true);
-		assert.ok(panelHeight === inst.$container.height(), "Should update container's height according to each panel's height");
-		inst.next(0);
-		assert.ok(panelHeight === Number(inst.getPrevElement().children(':first').attr('data-height')), "Should cache each panel's height to first element");
-	}
+	var runTest = function() {
+		for (var i = 0; i < inst._conf.panel.count - 1; i++) {
+			var panelHeight = inst.getElement().outerHeight(true);
+			assert.ok(panelHeight === inst.$container.height(), "Should update container's height according to each panel's height");
 
-	// When
-	inst.moveTo(0,0);
+			// When
+			inst.next(0);
+
+			// Then
+			assert.ok(panelHeight === Number(inst.getPrevElement().children(':first').attr('data-height')), "Should cache each panel's height to first element");
+		}
+
+		// When
+		inst.moveTo(0, 0);
+
+		// Then
+		assert.ok(inst.$container.height() === Number(inst.getElement().children(':first').attr('data-height')), "The container's height should be updated");
+	};
 
 	// Then
-	assert.ok(inst.$container.height() === Number(inst.getElement().children(':first').attr('data-height')), "The container's height should be updated");
+	runTest();
+
+	// When - simulate rotate case
+	inst.$wrapper.attr("style", "font-size:52px");
+
+	// Then
+	inst.resize();
+	runTest();
+
+	inst.$wrapper.attr("style", null);
 });
 
 QUnit.test("thresholdAngle", function(assert) {
@@ -1171,6 +1188,12 @@ QUnit.test("When change padding option", function(assert) {
 
 	// Then
 	runTest([20,30], true);
+
+	// When
+	setCondition([0,20]);
+
+	// Then
+	runTest([0,20], true);
 	inst.destroy();
 
 	// Given
@@ -1912,6 +1935,44 @@ QUnit.test("Workaround for buggy link highlighting on android 2.x", function(ass
 
 	// Then
 	assert.ok(leftValue && parseInt(leftValue, 10) > 0, "Panel should be moved using left property instead of translate.");
+});
+
+QUnit.test("Android 2.x panel move by API", function(assert) {
+	var done = assert.async();
+
+	// Given
+	eg.hook.agent = function () {
+		return {
+			// GalaxyS:2.3.4
+			"device": "GalaxyS:2.3.4",
+			"ua": "Mozilla/5.0 (Linux;U;Android 2.3.4;ko-kr;SHW-M110S Build/GINGERBREAD)AppleWebKit/533.1(KHTML, like Gecko) Version/4.0 Mobile Safari/533.1",
+			"os": {
+				"name": "android",
+				"version": "2.3.4"
+			},
+			"browser": {
+				"name": "default",
+				"version": "-1"
+			},
+			"isHWAccelerable": false,
+			"isTransitional": false,
+			"_hasClickBug": false
+		};
+	};
+	eg.invoke("flicking",[null, eg]);
+
+	// When
+	var inst = this.create("#mflick1");
+	var $container = inst.$container;
+
+	inst.next(300);
+
+	assert.equal($container.css("left"), "0px", "During the panel move, container's left should be 0px.");
+
+	setTimeout(function() {
+		assert.notEqual($container.css("left"), "0px", "After panel move container's left shouldn't be 0px.");
+		done();
+	}, 500);
 });
 
 QUnit.test("Check public methods return", function (assert) {

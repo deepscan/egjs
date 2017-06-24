@@ -83,6 +83,9 @@ eg.module("flicking", ["jQuery", eg, window, document, eg.MovableCoord], functio
 	var IS_ANDROID2 = ns.agent().os;
 	IS_ANDROID2 = IS_ANDROID2.name === "android" && /^2\./.test(IS_ANDROID2.version);
 
+	// data-height attribute's name for adaptiveHeight option
+	var DATA_HEIGHT = "data-height";
+
 	ns.Flicking = ns.Class.extend(ns.Component, {
 		_events: function() {
 			return EVENTS;
@@ -787,8 +790,6 @@ eg.module("flicking", ["jQuery", eg, window, document, eg.MovableCoord], functio
 			var $first;
 			var $children;
 			var height;
-			var dataName = "data-height";
-
 			var conf = this._conf;
 			var indexToMove = conf.indexToMove;
 
@@ -806,14 +807,14 @@ eg.module("flicking", ["jQuery", eg, window, document, eg.MovableCoord], functio
 				);
 
 			$first = $panel.find(":first");
-			height = $first.attr(dataName);
+			height = $first.attr(DATA_HEIGHT);
 
 			if (!height) {
 				$children = $panel.children();
 				height = ($children.length > 1 ? $panel.css("height", "auto") : $first)
 					.outerHeight(true);
 
-				$first.attr(dataName, height);
+				$first.attr(DATA_HEIGHT, height);
 			}
 
 			this.$wrapper.height(height);
@@ -936,7 +937,7 @@ eg.module("flicking", ["jQuery", eg, window, document, eg.MovableCoord], functio
 				panel.changed && this._triggerEvent(EVENTS.flickEnd);
 			}
 
-			!(phase === "start" && pos === undefined) && this._adjustContainerCss(phase);
+			this._adjustContainerCss(phase);
 		},
 
 		/**
@@ -1052,17 +1053,23 @@ eg.module("flicking", ["jQuery", eg, window, document, eg.MovableCoord], functio
 		 */
 		_isMovable: function () {
 			var options = this.options;
+			var conf = this._conf;
 			var mcInst = this._mcInst;
+			var panel = conf.panel;
 			var isMovable = Math.abs(this._conf.touch.distance) >= options.threshold;
 			var max;
 			var currPos;
+			var touchDirection;
 
 			if (!options.circular && isMovable) {
+				touchDirection = conf.touch.direction;
 				max = this._getDataByDirection(mcInst.options.max)[0];
 				currPos = this._getDataByDirection(mcInst.get())[0];
 
 				// if current position out of range
-				if (currPos < 0 || currPos > max) {
+				if ((panel.currNo === 0 && touchDirection === conf.dirData[1] ||  // first panel
+						panel.count - 1 === panel.currNo && touchDirection === conf.dirData[0]  // last panel
+					) && (currPos < 0 || currPos > max)) {
 					return false;
 				}
 			}
@@ -1371,32 +1378,6 @@ eg.module("flicking", ["jQuery", eg, window, document, eg.MovableCoord], functio
 		},
 
 		/**
-		 * Update panel's previewPadding size according options.previewPadding
-		 */
-		_checkPadding: function () {
-			var options = this.options;
-			var previewPadding = options.previewPadding.concat();
-			var padding = this.$wrapper.css("padding").split(" ");
-
-			options.horizontal && padding.reverse();
-
-			// get current padding value
-			padding = padding.length === 2 ?
-				[ padding[0], padding[0] ] : [ padding[0], padding[2] ];
-
-			padding = $.map(padding, function(num) {
-				return parseInt(num, 10);
-			});
-
-			// update padding when current and given are different
-			if (previewPadding.length === 2 &&
-				previewPadding[0] !== padding[0] || previewPadding[1] !== padding[1]) {
-
-				this._setPadding(previewPadding);
-			}
-		},
-
-		/**
 		 * Updates the size of the panel.
 		 * @ko 패널의 크기를 갱신한다
 		 * @method eg.Flicking#resize
@@ -1422,7 +1403,7 @@ eg.module("flicking", ["jQuery", eg, window, document, eg.MovableCoord], functio
 			var maxCoords;
 
 			if (~~options.previewPadding.join("")) {
-				this._checkPadding();
+				this._setPadding(options.previewPadding.concat());
 				panelSize = panel.size;
 			} else if (horizontal) {
 				panelSize = panel.size = this.$wrapper.width();
@@ -1433,6 +1414,14 @@ eg.module("flicking", ["jQuery", eg, window, document, eg.MovableCoord], functio
 			// resize elements
 			horizontal && this.$container.width(maxCoords[0] + panelSize);
 			panel.$list.css(horizontal ? "width" : "height", panelSize);
+
+			// remove data-height attribute and re-evaluate panel's height
+			if (options.adaptiveHeight) {
+				var $panel = this.$container.find("[" + DATA_HEIGHT + "]");
+
+				$panel.size() && $panel.attr(DATA_HEIGHT, null) &&
+					this._setAdaptiveHeight();
+			}
 
 			this._mcInst.options.max = maxCoords;
 			this._setMovableCoord("setTo", [panelSize * panel.index, 0], true, 0);
